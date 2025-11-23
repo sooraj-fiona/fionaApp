@@ -22,6 +22,12 @@ import {
   ANALYSIS_SUMMARY,
 } from '../constants';
 import { BackButton } from '../components/common';
+import {
+  AdjustModals,
+  MODE_OPTIONS,
+  useAdjustFlow,
+} from './AdjustThresholdFlow';
+import DownloadDataModal from './DownloadDataModal';
 
 const TemperatureCard = ({ stateKey }) => {
   const variant = TEMP_STATE_VARIANTS[stateKey] || TEMP_STATE_VARIANTS.normal;
@@ -50,7 +56,7 @@ const TemperatureCard = ({ stateKey }) => {
   );
 };
 
-const TrendSection = ({ timeframe, onSelect }) => {
+const TrendSection = ({ timeframe, onSelect, onAdjust }) => {
   const tabs = ['Hour', 'Day', 'Week', 'Month'];
   return (
     <View style={styles.trendCard}>
@@ -79,7 +85,7 @@ const TrendSection = ({ timeframe, onSelect }) => {
             );
           })}
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onAdjust}>
           <Text style={styles.adjustLink}>Adjust Threshold</Text>
         </TouchableOpacity>
       </View>
@@ -247,7 +253,7 @@ const InsightCards = ({ items }) => (
   </View>
 );
 
-const AnalysisCard = ({ summary, timeframe, onSelectTimeframe }) => (
+const AnalysisCard = ({ summary, timeframe, onSelectTimeframe, onAdjust, onDownload }) => (
   <View style={styles.analysisCard}>
     <View style={styles.analysisHeader}>
       <Text style={styles.sectionTitle}>Analysis</Text>
@@ -255,7 +261,7 @@ const AnalysisCard = ({ summary, timeframe, onSelectTimeframe }) => (
         <TouchableOpacity>
           <Feather name="share-2" size={16} color="#B8B3CB" />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onDownload}>
           <Feather name="download" size={16} color="#B8B3CB" />
         </TouchableOpacity>
       </View>
@@ -284,7 +290,7 @@ const AnalysisCard = ({ summary, timeframe, onSelectTimeframe }) => (
           </TouchableOpacity>
         );
       })}
-      <TouchableOpacity style={{ marginLeft: 'auto' }}>
+      <TouchableOpacity style={{ marginLeft: 'auto' }} onPress={onAdjust}>
         <Text style={styles.adjustLink}>Adjust Threshold</Text>
       </TouchableOpacity>
     </View>
@@ -353,6 +359,271 @@ const ProfileCardScreen = ({ user, onEditPress, onSignOut }) => (
       <Text style={styles.signOutLabel}>Sign Out</Text>
     </TouchableOpacity>
   </View>
+);
+
+const ModalShell = ({ children, onClose }) => (
+  <View
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 18,
+    }}
+  >
+    <TouchableOpacity
+      style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
+      activeOpacity={1}
+      onPress={onClose}
+    />
+    {children}
+  </View>
+);
+
+const SummaryModal = ({ mode, onEdit, onClose }) => (
+  <ModalShell onClose={onClose}>
+    <View
+      style={{
+        width: '100%',
+        backgroundColor: '#1B1527',
+        borderRadius: 24,
+        padding: 18,
+        gap: 12,
+      }}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ color: '#E7E3F3', fontSize: 18, fontWeight: '700' }}>Adjust Threshold</Text>
+        <TouchableOpacity onPress={onClose}>
+          <Feather name="x" size={20} color="#E7E3F3" />
+        </TouchableOpacity>
+      </View>
+      <View
+        style={{
+          backgroundColor: '#0F0B18',
+          borderRadius: 18,
+          padding: 14,
+          borderWidth: 1,
+          borderColor: '#2C2339',
+          gap: 6,
+        }}
+      >
+        <Text style={{ color: '#B7B2CE', fontSize: 13 }}>37.5°C · Current Temperature</Text>
+        <Text style={{ color: '#7FDBFF', fontSize: 13, fontWeight: '600' }}>Normal</Text>
+      </View>
+      <View
+        style={{
+          backgroundColor: '#0F0B18',
+          borderRadius: 18,
+          padding: 14,
+          borderWidth: 1,
+          borderColor: '#2C2339',
+          gap: 6,
+        }}
+      >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={{ color: '#E7E3F3', fontSize: 15, fontWeight: '700' }}>{mode.title}</Text>
+          <TouchableOpacity onPress={onEdit}>
+            <Feather name="edit-3" size={16} color="#7FDBFF" />
+          </TouchableOpacity>
+        </View>
+        <Text style={{ color: '#B7B2CE', fontSize: 13 }}>{mode.subtitle}</Text>
+        <Text style={{ color: '#9AE0BD', fontSize: 12, fontWeight: '600' }}>
+          Low: {mode.low} | High: {mode.high}
+        </Text>
+      </View>
+      <TouchableOpacity style={{ alignSelf: 'flex-end' }}>
+        <Text style={{ color: '#7FDBFF', fontWeight: '600' }}>View History</Text>
+      </TouchableOpacity>
+    </View>
+  </ModalShell>
+);
+
+const ModeSelectModal = ({ selectedId, onSelect, onContinue, onClose }) => (
+  <ModalShell onClose={onClose}>
+    <View
+      style={{
+        width: '100%',
+        backgroundColor: '#1B1527',
+        borderRadius: 24,
+        padding: 18,
+        gap: 12,
+      }}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ color: '#E7E3F3', fontSize: 18, fontWeight: '700' }}>Choose Monitoring Mode</Text>
+        <TouchableOpacity onPress={onClose}>
+          <Feather name="x" size={20} color="#E7E3F3" />
+        </TouchableOpacity>
+      </View>
+      <Text style={{ color: '#B7B2CE', fontSize: 13 }}>
+        Select a setup that best matches your child&apos;s current condition
+      </Text>
+      {MODE_OPTIONS.map((mode) => {
+        const active = mode.id === selectedId;
+        return (
+          <TouchableOpacity
+            key={mode.id}
+            onPress={() => onSelect(mode)}
+            activeOpacity={0.85}
+            style={{
+              backgroundColor: active ? '#252033' : '#120D1F',
+              borderRadius: 16,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: active ? '#7FDBFF' : '#2C2339',
+              marginBottom: 8,
+              gap: 6,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: '#E7E3F3', fontSize: 15, fontWeight: '700' }}>{mode.title}</Text>
+              {active && <Feather name="check" size={16} color="#7FDBFF" />}
+            </View>
+            <Text style={{ color: '#B7B2CE', fontSize: 13 }}>{mode.subtitle}</Text>
+            <Text style={{ color: '#9AE0BD', fontSize: 12, fontWeight: '600' }}>
+              Low: {mode.low} | High: {mode.high}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+      <TouchableOpacity
+        onPress={onContinue}
+        activeOpacity={0.9}
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 26,
+          paddingVertical: 14,
+          alignItems: 'center',
+          marginTop: 4,
+        }}
+      >
+        <Text style={{ color: '#1B1527', fontWeight: '700' }}>Continue</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={onClose} activeOpacity={0.8} style={{ alignItems: 'center' }}>
+        <Text style={{ color: '#E7E3F3', fontWeight: '600' }}>Cancel</Text>
+      </TouchableOpacity>
+    </View>
+  </ModalShell>
+);
+
+const PreviewModal = ({ mode, onSubmit, onClose }) => (
+  <ModalShell onClose={onClose}>
+    <View
+      style={{
+        width: '100%',
+        backgroundColor: '#1B1527',
+        borderRadius: 24,
+        padding: 18,
+        gap: 12,
+      }}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ color: '#E7E3F3', fontSize: 18, fontWeight: '700' }}>Preview & Confirm</Text>
+        <TouchableOpacity onPress={onClose}>
+          <Feather name="x" size={20} color="#E7E3F3" />
+        </TouchableOpacity>
+      </View>
+      <Text style={{ color: '#B7B2CE', fontSize: 13 }}>Review your monitoring setting</Text>
+      <View
+        style={{
+          backgroundColor: '#0F0B18',
+          borderRadius: 16,
+          padding: 14,
+          borderWidth: 1,
+          borderColor: '#2C2339',
+          gap: 6,
+        }}
+      >
+        <Text style={{ color: '#E7E3F3', fontSize: 15, fontWeight: '700' }}>{mode.title}</Text>
+        <Text style={{ color: '#B7B2CE', fontSize: 13 }}>{mode.subtitle}</Text>
+        <Text style={{ color: '#9AE0BD', fontSize: 12, fontWeight: '700' }}>
+          Low: {mode.low} | High: {mode.high}
+        </Text>
+      </View>
+      <View
+        style={{
+          backgroundColor: '#0F0B18',
+          borderRadius: 16,
+          padding: 14,
+          borderWidth: 1,
+          borderColor: '#2C2339',
+          gap: 10,
+        }}
+      >
+        <Text style={{ color: '#E7E3F3', fontSize: 15, fontWeight: '700' }}>Threshold Settings</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={{ color: '#B7B2CE', fontSize: 12 }}>Low Threshold</Text>
+            <Text style={{ color: '#E7E3F3', fontWeight: '700' }}>35°C</Text>
+          </View>
+          <View
+            style={{
+              flex: 1,
+              marginHorizontal: 12,
+              height: 4,
+              backgroundColor: '#2C2339',
+              borderRadius: 2,
+            }}
+          />
+          <View>
+            <Text style={{ color: '#B7B2CE', fontSize: 12 }}>High Threshold</Text>
+            <Text style={{ color: '#E7E3F3', fontWeight: '700' }}>40°C</Text>
+          </View>
+        </View>
+      </View>
+      <TouchableOpacity
+        onPress={onSubmit}
+        activeOpacity={0.9}
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 26,
+          paddingVertical: 14,
+          alignItems: 'center',
+        }}
+      >
+        <Text style={{ color: '#1B1527', fontWeight: '700' }}>Submit</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={onClose} activeOpacity={0.8} style={{ alignItems: 'center' }}>
+        <Text style={{ color: '#E7E3F3', fontWeight: '600' }}>Cancel</Text>
+      </TouchableOpacity>
+    </View>
+  </ModalShell>
+);
+
+const SuccessModal = ({ mode, onClose }) => (
+  <ModalShell onClose={onClose}>
+    <View
+      style={{
+        width: '80%',
+        backgroundColor: '#1B1527',
+        borderRadius: 18,
+        padding: 18,
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <View
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: 24,
+          backgroundColor: '#7FDBFF',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Feather name="check" size={24} color="#0B0B15" />
+      </View>
+      <Text style={{ color: '#E7E3F3', fontSize: 16, fontWeight: '700' }}>Mode Activated</Text>
+      <Text style={{ color: '#B7B2CE', fontSize: 13, textAlign: 'center' }}>
+        {mode.title} is now active for monitoring.
+      </Text>
+    </View>
+  </ModalShell>
 );
 
 const DashboardHeader = ({ profile, batteryLevel, onPressProfile }) => (
@@ -541,6 +812,7 @@ export const DashboardScreen = ({ user, onBack }) => {
   const [timeframe, setTimeframe] = useState('Hour');
   const [activeNav, setActiveNav] = useState('home');
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const [downloadVisible, setDownloadVisible] = useState(false);
   const [profiles, setProfiles] = useState(() => [
     ...DEFAULT_PROFILES,
     {
@@ -572,6 +844,15 @@ export const DashboardScreen = ({ user, onBack }) => {
     name: activeProfile?.name || 'Edward',
     email: 'Edward1234@example.com',
   };
+  const {
+    adjustStep,
+    setAdjustStep,
+    selectedMode,
+    setSelectedMode,
+    pendingMode,
+    setPendingMode,
+    startAdjustFlow,
+  } = useAdjustFlow();
 
   const openProfileSheet = () => {
     setProfileSheetVisible(true);
@@ -670,8 +951,14 @@ export const DashboardScreen = ({ user, onBack }) => {
             summary={ANALYSIS_SUMMARY}
             timeframe={timeframe}
             onSelectTimeframe={setTimeframe}
+            onAdjust={startAdjustFlow}
+            onDownload={() => setDownloadVisible(true)}
           />
-          <TrendSection timeframe={timeframe} onSelect={setTimeframe} />
+          <TrendSection
+            timeframe={timeframe}
+            onSelect={setTimeframe}
+            onAdjust={startAdjustFlow}
+          />
         </View>
       );
     }
@@ -681,6 +968,7 @@ export const DashboardScreen = ({ user, onBack }) => {
         <TrendSection
           timeframe={timeframe}
           onSelect={setTimeframe}
+          onAdjust={startAdjustFlow}
         />
         <DeviceHealthCard />
         <ManageAccessCard accessList={MANAGE_ACCESS_FIXTURES} />
@@ -727,6 +1015,18 @@ export const DashboardScreen = ({ user, onBack }) => {
         }}
         onAddProfile={handleAddProfile}
         onClose={() => setProfileSheetVisible(false)}
+      />
+      <AdjustModals
+        adjustStep={adjustStep}
+        selectedMode={selectedMode}
+        pendingMode={pendingMode}
+        setPendingMode={setPendingMode}
+        setSelectedMode={setSelectedMode}
+        setAdjustStep={setAdjustStep}
+      />
+      <DownloadDataModal
+        visible={downloadVisible}
+        onClose={() => setDownloadVisible(false)}
       />
     </View>
   );
