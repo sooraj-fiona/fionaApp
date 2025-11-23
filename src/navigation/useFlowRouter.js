@@ -40,6 +40,7 @@ export const useFlowRouter = () => {
     goToBluetooth: () => setFlow(FLOW.BLUETOOTH),
     goToProfile: () => setFlow(FLOW.PROFILE),
     goToDashboard: () => setFlow(FLOW.DASHBOARD),
+    goToManagePermissions: () => setFlow(FLOW.MANAGE_PERMISSIONS),
     goBackToAuth: () => setFlow(FLOW.AUTH),
     goBackToBluetooth: () => setFlow(FLOW.BLUETOOTH),
     goBackToProfile: () => setFlow(FLOW.PROFILE),

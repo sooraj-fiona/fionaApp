@@ -21,6 +21,7 @@ import {
   DashboardScreen,
   JourneySlide,
   LogoSlide,
+  ManagePermissionsScreen,
   ProfileJourney,
 } from './src/screens';
 import { useFlowRouter } from './src/navigation/useFlowRouter';
@@ -49,6 +50,7 @@ export default function App() {
     goToBluetooth,
     goToProfile,
     goToDashboard,
+    goToManagePermissions,
     goBackToAuth,
     goBackToBluetooth,
     goBackToProfile,
@@ -109,6 +111,10 @@ export default function App() {
       );
     }
 
+    if (flow === 'managePermissions') {
+      return <ManagePermissionsScreen />;
+    }
+
     if (flow === 'auth') {
       return (
         <AuthScreen
@@ -136,12 +142,13 @@ export default function App() {
       );
     }
 
-    return (
-      <DashboardScreen
-        user={userProfile || USER_FIXTURES.google}
-        onBack={goBackToProfile}
-      />
-    );
+      return (
+        <DashboardScreen
+          user={userProfile || USER_FIXTURES.google}
+          onBack={goBackToProfile}
+          onManagePermissions={goToManagePermissions}
+        />
+      );
   };
 
   return (

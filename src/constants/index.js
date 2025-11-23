@@ -14,6 +14,7 @@ export const FLOW = {
   BLUETOOTH: 'bluetooth',
   PROFILE: 'profile',
   DASHBOARD: 'dashboard',
+  MANAGE_PERMISSIONS: 'managePermissions',
 };
 
 export const USER_FIXTURES = {

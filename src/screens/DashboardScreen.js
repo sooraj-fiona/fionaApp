@@ -143,7 +143,7 @@ const DeviceHealthCard = () => (
   </View>
 );
 
-const ManageAccessCard = ({ accessList }) => (
+const ManageAccessCard = ({ accessList, onManage }) => (
   <View style={styles.manageAccessCard}>
     <Text style={styles.sectionTitle}>Manage Access</Text>
     <View style={styles.accessList}>
@@ -164,7 +164,11 @@ const ManageAccessCard = ({ accessList }) => (
         </View>
       ))}
     </View>
-    <TouchableOpacity style={styles.managePermissionButton} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={styles.managePermissionButton}
+      activeOpacity={0.9}
+      onPress={onManage}
+    >
       <Text style={styles.managePermissionLabel}>Manage Permission</Text>
       <View style={styles.managePermissionArrows}>
         <Feather name="chevron-right" size={16} color="#1C142F" />
@@ -807,7 +811,7 @@ const ProfileSheet = ({
   );
 };
 
-export const DashboardScreen = ({ user, onBack }) => {
+export const DashboardScreen = ({ user, onBack, onManagePermissions }) => {
   const tempState = 'normal';
   const [timeframe, setTimeframe] = useState('Hour');
   const [activeNav, setActiveNav] = useState('home');
@@ -971,7 +975,10 @@ export const DashboardScreen = ({ user, onBack }) => {
           onAdjust={startAdjustFlow}
         />
         <DeviceHealthCard />
-        <ManageAccessCard accessList={MANAGE_ACCESS_FIXTURES} />
+        <ManageAccessCard
+          accessList={MANAGE_ACCESS_FIXTURES}
+          onManage={onManagePermissions}
+        />
       </>
     );
   }, [activeNav, alertsLoading, timeframe]);
